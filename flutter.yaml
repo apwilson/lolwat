@@ -1,0 +1,5 @@
+name: lolwat
+material-design-icons:
+  - name: content/add
+assets:
+  - packages/lolwat/res/Nathan.png
