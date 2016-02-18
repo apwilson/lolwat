@@ -2,4 +2,4 @@ name: lolwat
 description: A minimal Flutter project.
 dependencies:
   flutter:
-    path: ../flutter/packages/flutter
+    path: /usr/local/google/home/anwilson/sysui/src/third_party/flutter/packages/flutter

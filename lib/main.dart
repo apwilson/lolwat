@@ -1,17 +1,17 @@
 import 'dart:math' as math;
 import 'dart:async';
+import 'dart:ui' as ui show window;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(new MaterialApp(title: "Flutter Demo", routes: <String, RouteBuilder>{
-    '/': (RouteArguments args) => new FlutterDemo()
-  }));
+  runApp(new MaterialApp(
+      title: "Flutter Demo",
+      routes: <String, RouteBuilder>{
+        '/': (RouteArguments args) => new FlutterDemo()
+      }));
 }
-
-const int _kRows = 2;
-const int _kColumns = 2;
 
 class FlutterDemo extends StatefulComponent {
   @override
@@ -19,36 +19,53 @@ class FlutterDemo extends StatefulComponent {
 }
 
 class FlutterDemoState extends State {
-  int counter = 0;
-  List<List<SpinnyNathan>> spinnyNathans;
+  int _rows;
+  int _columns;
+  List<List<SpinnyNathan>> _spinnyNathans;
 
   @override
   void initState() {
     super.initState();
-    spinnyNathans = new List.generate(
-        _kRows, (_) => new List.generate(_kColumns, (_) => new SpinnyNathan()));
-    final math.Random random = new math.Random();
-      new Timer.periodic(const Duration(milliseconds:100), (_){
-        int row = random.nextInt(_kRows);
-        int column = random.nextInt(_kColumns);
-      (spinnyNathans[row][column].key as GlobalKey).currentState.fall();
-
-      });
-}
-
+  }
 
   @override
-  Widget build(BuildContext context) => new DefaultAssetBundle(
-      bundle: rootBundle,
-      child: new Center(
-          child: new Row(
-              children: new List.generate(
-                  _kRows,
-                  (int rowIndex) => new Column(
-                      children: new List.generate(
-                          _kColumns,
-                          (int columnIndex) =>
-                              spinnyNathans[rowIndex][columnIndex]))))));
+  Widget build(BuildContext context) {
+    if (ui.window.size == Size.zero) {
+      return new Container();
+    }
+    if (_spinnyNathans == null || _spinnyNathans.isEmpty) {
+      _rows = (ui.window.size.height / 100.0).floor();
+      _columns = (ui.window.size.width / 100.0).floor();
+      // Switch to immersive mode in case we're running on android.
+      try {
+        activity.setSystemUiVisibility(SystemUiVisibility.immersive);
+      } catch (exception) {
+        print("Failed to set immersive: $exception");
+      }
+      _spinnyNathans = new List.generate(
+          _rows, (_) => new List.generate(_columns, (_) => new SpinnyNathan()));
+      final math.Random random = new math.Random();
+      new Timer.periodic(const Duration(milliseconds: 50), (_) {
+        int row = random.nextInt(_rows);
+        int column = random.nextInt(_columns);
+        (_spinnyNathans[row][column].key as GlobalKey).currentState.fall();
+      });
+    }
+
+    return new DefaultAssetBundle(
+        bundle: rootBundle,
+        child: new Center(
+            child: new IntrinsicWidth(
+                child: new Row(
+                    children: new List.generate(
+                        _columns,
+                        (int columnIndex) => new IntrinsicHeight(
+                            child: new Column(
+                                children: new List.generate(
+                                    _rows,
+                                    (int rowIndex) => _spinnyNathans[rowIndex]
+                                        [columnIndex]))))))));
+  }
 }
 
 class SpinnyNathan extends StatefulComponent {
@@ -60,21 +77,26 @@ class SpinnyNathanState extends State<SpinnyNathan> {
   final AnimationController controller =
       new AnimationController(duration: const Duration(seconds: 1));
   CurvedAnimation curve;
+  int _fallCount = 0;
   SpinnyNathanState() {
     curve =
         new CurvedAnimation(parent: controller, curve: Curves.fastOutSlowIn);
     controller.forward();
     controller.addStatusListener((AnimationStatus status) {
-      print("controller $hashCode: $controller");
       if (status == AnimationStatus.dismissed) {
         controller.forward();
-      } else {
-      }
+      } else {}
     });
   }
 
   void fall() {
-    controller.reverse();
+    if (controller.value > 0.0 &&
+        controller.status != AnimationStatus.reverse) {
+      controller.reverse();
+      setState(() {
+        _fallCount++;
+      });
+    }
   }
 
   @override
@@ -92,12 +114,28 @@ class SpinnyNathanState extends State<SpinnyNathan> {
                       .scale(curve.value),
                   child: child))),
       child: new GestureDetector(onTap: () {
-        controller.reverse();
+        fall();
       },
-          child: new Container(
-              width: 100.0,
-              height: 100.0,
-              child: new AssetImage(name: 'packages/lolwat/res/Nathan.png'),
-              decoration:
-                  new BoxDecoration(backgroundColor: new Color(0xFFFFFF00)))));
+          child: new ClipRRect(
+              xRadius: 8.0,
+              yRadius: 8.0,
+              child: new Container(
+                  width: 100.0,
+                  height: 100.0,
+                  child: new Stack(children: [
+                    new AssetImage(name: 'packages/lolwat/res/Nathan.png'),
+                    new Align(
+                        alignment: new FractionalOffset(1.0, 1.0),
+                        child: new Container(
+                            padding: new EdgeDims.all(8.0),
+                            decoration: new BoxDecoration(
+                                backgroundColor: new Color(0x80000000),
+                                borderRadius: 8.0),
+                            child: new Text(_fallCount.toString(),
+                                style: new TextStyle(
+                                    color: new Color(0xFFEEEEEE),
+                                    fontSize: 16.0))))
+                  ]),
+                  decoration: new BoxDecoration(
+                      backgroundColor: new Color(0xFFFFFF00))))));
 }
