@@ -15,22 +15,26 @@ const Duration _kFallDuration = const Duration(seconds: 1);
 const Duration _kAutoFallDuration = const Duration(milliseconds: 50);
 
 void main() {
+  Widget photo = new AssetImage(name: 'packages/lolwat/res/Nathan.png');
   runApp(new MaterialApp(
-      title: "Flutter Demo",
+      title: "Falling Photos",
       routes: <String, RouteBuilder>{
-        '/': (RouteArguments args) => new FlutterDemo()
+        '/': (RouteArguments args) => new FallingPhotos(child: photo)
       }));
 }
 
-class FlutterDemo extends StatefulComponent {
+class FallingPhotos extends StatefulComponent {
+  final Widget child;
+  FallingPhotos({this.child});
   @override
-  State createState() => new FlutterDemoState();
+  State createState() => new FallingPhotosState();
 }
 
-class FlutterDemoState extends State {
+class FallingPhotosState extends State {
   int _rows;
   int _columns;
-  List<List<SpinnyNathan>> _spinnyNathans;
+  List<List<FallingPhoto>> _fallingPhotos;
+  Timer _timer;
 
   @override
   void initState() {
@@ -39,27 +43,28 @@ class FlutterDemoState extends State {
 
   @override
   Widget build(BuildContext context) {
-    if (ui.window.size == Size.zero) {
+    if (ui.window.size.height <= 0.0 || ui.window.size.width <= 0.0) {
       return new Container();
     }
-    if (_spinnyNathans == null || _spinnyNathans.isEmpty) {
-      _rows = (ui.window.size.height / _kImageHeight).floor();
-      _columns = (ui.window.size.width / _kImageWidth).floor();
-      // Switch to immersive mode in case we're running on android.
-      try {
-        activity.setSystemUiVisibility(SystemUiVisibility.immersive);
-      } catch (exception) {
-        print("Failed to set immersive: $exception");
-      }
-      _spinnyNathans = new List.generate(
-          _rows, (_) => new List.generate(_columns, (_) => new SpinnyNathan()));
-      final math.Random random = new math.Random();
-      new Timer.periodic(_kAutoFallDuration, (_) {
-        int row = random.nextInt(_rows);
-        int column = random.nextInt(_columns);
-        (_spinnyNathans[row][column].key as GlobalKey).currentState.fall();
-      });
+    _rows = math.max(1, (ui.window.size.height / _kImageHeight).floor());
+    _columns = math.max(1, (ui.window.size.width / _kImageWidth).floor());
+    // Switch to immersive mode in case we're running on android.
+    try {
+      activity.setSystemUiVisibility(SystemUiVisibility.immersive);
+    } catch (exception) {
+      print("Failed to set immersive: $exception");
     }
+    _fallingPhotos = new List.generate(
+        _rows,
+        (_) => new List.generate(
+            _columns, (_) => new FallingPhoto(child: config.child)));
+    final math.Random random = new math.Random();
+    _timer?.cancel();
+    _timer = new Timer.periodic(_kAutoFallDuration, (_) {
+      int row = random.nextInt(_rows);
+      int column = random.nextInt(_columns);
+      (_fallingPhotos[row][column].key as GlobalKey).currentState.fall();
+    });
 
     return new DefaultAssetBundle(
         bundle: rootBundle,
@@ -72,22 +77,23 @@ class FlutterDemoState extends State {
                             child: new Column(
                                 children: new List.generate(
                                     _rows,
-                                    (int rowIndex) => _spinnyNathans[rowIndex]
+                                    (int rowIndex) => _fallingPhotos[rowIndex]
                                         [columnIndex]))))))));
   }
 }
 
-class SpinnyNathan extends StatefulComponent {
-  SpinnyNathan() : super(key: new GlobalKey());
-  SpinnyNathanState createState() => new SpinnyNathanState();
+class FallingPhoto extends StatefulComponent {
+  final Widget child;
+  FallingPhoto({this.child}) : super(key: new GlobalKey());
+  State createState() => new FallingPhotoState();
 }
 
-class SpinnyNathanState extends State<SpinnyNathan> {
+class FallingPhotoState extends State<FallingPhoto> {
   final AnimationController controller =
       new AnimationController(duration: _kFallDuration);
   CurvedAnimation curve;
   int _fallCount = 0;
-  SpinnyNathanState() {
+  FallingPhotoState() {
     curve =
         new CurvedAnimation(parent: controller, curve: Curves.fastOutSlowIn);
     controller.forward();
@@ -132,7 +138,7 @@ class SpinnyNathanState extends State<SpinnyNathan> {
                   width: _kImageWidth,
                   height: _kImageHeight,
                   child: new Stack(children: [
-                    new AssetImage(name: 'packages/lolwat/res/Nathan.png'),
+                    config.child,
                     new Align(
                         alignment: new FractionalOffset(1.0, 1.0),
                         child: new Container(
