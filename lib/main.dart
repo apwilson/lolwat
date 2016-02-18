@@ -11,7 +11,7 @@ const double _kFallDistance = 600.0;
 const double _kTextPadding = 8.0;
 const double _kRoundedCornerRadius = 8.0;
 const double _kTextFontSize = 16.0;
-const Duration _kFallDuration = const Duration(seconds: 1);
+const Duration _kFallDuration = const Duration(milliseconds: 500);
 const Duration _kAutoFallDuration = const Duration(milliseconds: 50);
 
 void main() {
@@ -19,13 +19,15 @@ void main() {
   runApp(new MaterialApp(
       title: "Falling Photos",
       routes: <String, RouteBuilder>{
-        '/': (RouteArguments args) => new FallingPhotos(child: photo)
+        '/': (RouteArguments args) =>
+            new FallingPhotos(child: photo, autoFall: true)
       }));
 }
 
 class FallingPhotos extends StatefulComponent {
   final Widget child;
-  FallingPhotos({this.child});
+  final bool autoFall;
+  FallingPhotos({this.child, this.autoFall: false});
   @override
   State createState() => new FallingPhotosState();
 }
@@ -60,12 +62,14 @@ class FallingPhotosState extends State {
         (_) => new List.generate(
             _columns, (_) => new FallingPhoto(child: config.child)));
     final math.Random random = new math.Random();
-    _timer?.cancel();
-    _timer = new Timer.periodic(_kAutoFallDuration, (_) {
-      int row = random.nextInt(_rows);
-      int column = random.nextInt(_columns);
-      (_fallingPhotos[row][column].key as GlobalKey).currentState.fall();
-    });
+    if (config.autoFall) {
+      _timer?.cancel();
+      _timer = new Timer.periodic(_kAutoFallDuration, (_) {
+        int row = random.nextInt(_rows);
+        int column = random.nextInt(_columns);
+        (_fallingPhotos[row][column].key as GlobalKey).currentState.fall();
+      });
+    }
 
     return new DefaultAssetBundle(
         bundle: rootBundle,
