@@ -5,6 +5,15 @@ import 'dart:ui' as ui show window;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
+const double _kImageWidth = 200.0;
+const double _kImageHeight = 200.0;
+const double _kFallDistance = 600.0;
+const double _kTextPadding = 8.0;
+const double _kRoundedCornerRadius = 8.0;
+const double _kTextFontSize = 16.0;
+const Duration _kFallDuration = const Duration(seconds: 1);
+const Duration _kAutoFallDuration = const Duration(milliseconds: 50);
+
 void main() {
   runApp(new MaterialApp(
       title: "Flutter Demo",
@@ -34,8 +43,8 @@ class FlutterDemoState extends State {
       return new Container();
     }
     if (_spinnyNathans == null || _spinnyNathans.isEmpty) {
-      _rows = (ui.window.size.height / 100.0).floor();
-      _columns = (ui.window.size.width / 100.0).floor();
+      _rows = (ui.window.size.height / _kImageHeight).floor();
+      _columns = (ui.window.size.width / _kImageWidth).floor();
       // Switch to immersive mode in case we're running on android.
       try {
         activity.setSystemUiVisibility(SystemUiVisibility.immersive);
@@ -45,7 +54,7 @@ class FlutterDemoState extends State {
       _spinnyNathans = new List.generate(
           _rows, (_) => new List.generate(_columns, (_) => new SpinnyNathan()));
       final math.Random random = new math.Random();
-      new Timer.periodic(const Duration(milliseconds: 50), (_) {
+      new Timer.periodic(_kAutoFallDuration, (_) {
         int row = random.nextInt(_rows);
         int column = random.nextInt(_columns);
         (_spinnyNathans[row][column].key as GlobalKey).currentState.fall();
@@ -75,7 +84,7 @@ class SpinnyNathan extends StatefulComponent {
 
 class SpinnyNathanState extends State<SpinnyNathan> {
   final AnimationController controller =
-      new AnimationController(duration: const Duration(seconds: 1));
+      new AnimationController(duration: _kFallDuration);
   CurvedAnimation curve;
   int _fallCount = 0;
   SpinnyNathanState() {
@@ -106,7 +115,7 @@ class SpinnyNathanState extends State<SpinnyNathan> {
           opacity: curve.value,
           child: new Transform(
               transform: new Matrix4.identity()
-                  .translate(0.0, 600.0 * (1.0 - curve.value)),
+                  .translate(0.0, _kFallDistance * (1.0 - curve.value)),
               child: new Transform(
                   alignment: new FractionalOffset(0.5, 0.5),
                   transform: new Matrix4.identity()
@@ -117,24 +126,24 @@ class SpinnyNathanState extends State<SpinnyNathan> {
         fall();
       },
           child: new ClipRRect(
-              xRadius: 8.0,
-              yRadius: 8.0,
+              xRadius: _kRoundedCornerRadius,
+              yRadius: _kRoundedCornerRadius,
               child: new Container(
-                  width: 100.0,
-                  height: 100.0,
+                  width: _kImageWidth,
+                  height: _kImageHeight,
                   child: new Stack(children: [
                     new AssetImage(name: 'packages/lolwat/res/Nathan.png'),
                     new Align(
                         alignment: new FractionalOffset(1.0, 1.0),
                         child: new Container(
-                            padding: new EdgeDims.all(8.0),
+                            padding: new EdgeDims.all(_kTextPadding),
                             decoration: new BoxDecoration(
                                 backgroundColor: new Color(0x80000000),
-                                borderRadius: 8.0),
+                                borderRadius: _kRoundedCornerRadius),
                             child: new Text(_fallCount.toString(),
                                 style: new TextStyle(
                                     color: new Color(0xFFEEEEEE),
-                                    fontSize: 16.0))))
+                                    fontSize: _kTextFontSize))))
                   ]),
                   decoration: new BoxDecoration(
                       backgroundColor: new Color(0xFFFFFF00))))));
