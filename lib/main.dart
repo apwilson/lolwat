@@ -39,6 +39,12 @@ class FallingPhotosState extends State {
   @override
   void initState() {
     super.initState();
+    // Switch to immersive mode in case we're running on android.
+    try {
+      activity.setSystemUiVisibility(SystemUiVisibility.immersive);
+    } catch (exception) {
+      print("Failed to set immersive: $exception");
+    }
   }
 
   @override
@@ -46,14 +52,9 @@ class FallingPhotosState extends State {
     if (ui.window.size.height <= 0.0 || ui.window.size.width <= 0.0) {
       return new Container();
     }
+
     _rows = math.max(1, (ui.window.size.height / _kImageHeight).floor());
     _columns = math.max(1, (ui.window.size.width / _kImageWidth).floor());
-    // Switch to immersive mode in case we're running on android.
-    try {
-      activity.setSystemUiVisibility(SystemUiVisibility.immersive);
-    } catch (exception) {
-      print("Failed to set immersive: $exception");
-    }
     _fallingPhotos = new List.generate(
         _rows,
         (_) => new List.generate(
